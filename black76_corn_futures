@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Black-76 Corn Futures Options Calculator</title>
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f4ef;
+    --bg-info: #E6F1FB;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-tertiary: #9a9a9a;
+    --text-info: #0C447C;
+    --border: rgba(0, 0, 0, 0.12);
+    --border-info: #378ADD;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: #fafaf7;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    line-height: 1.6;
+  }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 0.25rem; }
+  h2 { font-size: 14px; font-weight: 500; margin: 1.5rem 0 10px; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 1.5rem; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-bottom: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .full { grid-column: 1 / -1; }
+
+  .input-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .input-label { font-size: 13px; color: var(--text-secondary); }
+  .input-value { font-size: 14px; font-weight: 500; }
+  input[type="range"] { width: 100%; }
+
+  .card-raised {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+  }
+  .stat-card.tall { padding: 1rem; }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+  .stat-label.lg { font-size: 13px; margin-bottom: 4px; }
+  .stat-value { font-size: 18px; font-weight: 500; }
+  .stat-value.sm { font-size: 15px; }
+  .stat-value.lg { font-size: 24px; }
+  .stat-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  .greeks-card {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    padding: 1rem 1.25rem;
+  }
+  table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  th { text-align: left; padding: 6px 0; color: var(--text-secondary); font-weight: 400; border-bottom: 0.5px solid var(--border); }
+  th.right { text-align: right; }
+  th.indent { padding-left: 16px; }
+  td { padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  td.right { text-align: right; }
+  td.interp { padding-left: 16px; color: var(--text-secondary); font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+
+  .seg-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 13px;
+    background: transparent;
+    border: 0.5px solid var(--border);
+    cursor: pointer;
+    color: var(--text-secondary);
+  }
+  .seg-btn.active {
+    background: var(--bg-info);
+    color: var(--text-info);
+    border-color: var(--border-info);
+  }
+  .seg-btn:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .seg-btn:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+  .seg-btn:not(:last-child) { border-right: none; }
+
+  .num-input, select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+  }
+  select { font-family: var(--font-sans); }
+
+  button {
+    padding: 6px 12px;
+    font-size: 13px;
+    background: transparent;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  button:hover { background: var(--bg-secondary); }
+
+  .preset-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .leg-row {
+    display: grid;
+    grid-template-columns: 80px 80px 1fr 60px 1fr 32px;
+    gap: 6px;
+    align-items: center;
+    padding: 6px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+  }
+  .leg-row .vol-wrap { display: flex; align-items: center; gap: 4px; }
+  .leg-row .vol-wrap span { font-size: 11px; color: var(--text-secondary); }
+  .leg-row .rm-btn { padding: 4px; font-size: 14px; line-height: 1; }
+
+  .footnote { font-size: 12px; color: var(--text-tertiary); margin-top: 12px; line-height: 1.6; }
+  section { margin-bottom: 2rem; }
+</style>
+</head>
+<body>
+
+<h1>Black-76 corn futures options calculator</h1>
+<p class="subtitle">CBOT corn (ZC). Pricing, implied vol solver, and strategy payoff at expiration.</p>
+
+<section>
+  <h2>Market inputs</h2>
+  <div class="grid-2">
+    <div>
+      <div class="input-row">
+        <label class="input-label">Futures price (¢/bu)</label>
+        <span id="F-out" class="input-value">450</span>
+      </div>
+      <input type="range" id="F" min="200" max="800" value="450" step="1" />
+    </div>
+    <div>
+      <div class="input-row">
+        <label class="input-label">Strike (¢/bu)</label>
+        <span id="K-out" class="input-value">460</span>
+      </div>
+      <input type="range" id="K" min="200" max="800" value="460" step="1" />
+    </div>
+    <div>
+      <div class="input-row">
+        <label class="input-label">Days to expiry</label>
+        <span id="D-out" class="input-value">60</span>
+      </div>
+      <input type="range" id="D" min="1" max="365" value="60" step="1" />
+    </div>
+    <div>
+      <div class="input-row">
+        <label class="input-label">Volatility (%, annualized)</label>
+        <span id="V-out" class="input-value">25.0</span>
+      </div>
+      <input type="range" id="V" min="5" max="100" value="25" step="0.5" />
+    </div>
+    <div class="full">
+      <div class="input-row">
+        <label class="input-label">Risk-free rate (%)</label>
+        <span id="R-out" class="input-value">4.5</span>
+      </div>
+      <input type="range" id="R" min="0" max="10" value="4.5" step="0.1" />
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Pricing &amp; Greeks</h2>
+
+  <div class="grid-2" style="gap: 12px;">
+    <div class="stat-card tall">
+      <div class="stat-label lg">Call premium</div>
+      <div class="stat-value lg" id="call-cents">—</div>
+      <div class="stat-sub" id="call-dollars">—</div>
+    </div>
+    <div class="stat-card tall">
+      <div class="stat-label lg">Put premium</div>
+      <div class="stat-value lg" id="put-cents">—</div>
+      <div class="stat-sub" id="put-dollars">—</div>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin: 12px 0 1.25rem;">
+    <div class="stat-card">
+      <div class="stat-label">Moneyness</div>
+      <div class="stat-value sm" id="moneyness">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">d1 / d2</div>
+      <div class="stat-value sm" id="d12">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Time to expiry</div>
+      <div class="stat-value sm" id="texp">—</div>
+    </div>
+  </div>
+
+  <div class="greeks-card">
+    <div style="font-size: 14px; font-weight: 500; margin-bottom: 10px;">Greeks</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Greek</th>
+          <th class="right">Call</th>
+          <th class="right">Put</th>
+          <th class="indent">Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Delta</td><td class="right" id="cd">—</td><td class="right" id="pd">—</td>
+          <td class="interp">Δ premium per 1¢ move in F</td>
+        </tr>
+        <tr>
+          <td>Gamma</td><td class="right" id="cg">—</td><td class="right" id="pg">—</td>
+          <td class="interp">Δ delta per 1¢ move in F</td>
+        </tr>
+        <tr>
+          <td>Vega</td><td class="right" id="cv">—</td><td class="right" id="pv">—</td>
+          <td class="interp">Δ premium per +1% vol (¢/bu)</td>
+        </tr>
+        <tr>
+          <td>Theta</td><td class="right" id="ct">—</td><td class="right" id="pt">—</td>
+          <td class="interp">Δ premium per day (¢/bu)</td>
+        </tr>
+        <tr>
+          <td>Rho</td><td class="right" id="cr">—</td><td class="right" id="pr">—</td>
+          <td class="interp">Δ premium per +1% rate (¢/bu)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Implied volatility solver</h2>
+  <div class="card-raised">
+    <div class="grid-3" style="margin-bottom: 12px;">
+      <div>
+        <div class="stat-label">Type</div>
+        <div style="display: flex;">
+          <button class="seg-btn active" id="iv-call">Call</button>
+          <button class="seg-btn" id="iv-put">Put</button>
+        </div>
+      </div>
+      <div>
+        <div class="stat-label">Strike (¢/bu)</div>
+        <input type="number" id="iv-K" class="num-input" value="460" step="1" />
+      </div>
+      <div>
+        <div class="stat-label">Market price (¢/bu)</div>
+        <input type="number" id="iv-price" class="num-input" value="15.00" step="0.25" />
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Implied vol</div>
+        <div class="stat-value" id="iv-out">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Theo at IV</div>
+        <div class="stat-value" id="iv-theo">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Solver iterations</div>
+        <div class="stat-value" id="iv-iter">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Strategy builder — expiration P&amp;L</h2>
+
+  <div class="preset-row">
+    <button class="preset-btn" data-preset="long-call">Long call</button>
+    <button class="preset-btn" data-preset="long-put">Long put</button>
+    <button class="preset-btn" data-preset="bull-call">Bull call</button>
+    <button class="preset-btn" data-preset="bear-put">Bear put</button>
+    <button class="preset-btn" data-preset="straddle">Long straddle</button>
+    <button class="preset-btn" data-preset="strangle">Long strangle</button>
+    <button class="preset-btn" data-preset="iron-condor">Iron condor</button>
+    <button class="preset-btn" data-preset="fence">Fence</button>
+  </div>
+
+  <div id="legs" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;"></div>
+
+  <div style="display: flex; gap: 8px; margin-bottom: 1.25rem;">
+    <button id="add-leg" style="flex: 1;">+ Add leg</button>
+    <button id="clear-legs" style="flex: 1;">Clear all</button>
+  </div>
+
+  <div class="grid-4">
+    <div class="stat-card">
+      <div class="stat-label">Net debit/credit</div>
+      <div class="stat-value sm" id="net-cost">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Max profit</div>
+      <div class="stat-value sm" id="max-profit">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Max loss</div>
+      <div class="stat-value sm" id="max-loss">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Breakeven(s)</div>
+      <div class="stat-value sm" id="breakevens">—</div>
+    </div>
+  </div>
+
+  <div style="position: relative; width: 100%; height: 320px; margin-top: 1rem;">
+    <canvas id="payoffChart" role="img" aria-label="Expiration P&L diagram for the configured options strategy.">
+      Payoff diagram showing P&L at expiration across futures prices.
+    </canvas>
+  </div>
+</section>
+
+<p class="footnote">
+  Black-76 model. CBOT corn (ZC): 5,000 bu/contract, 1¢/bu = $50.
+  P&amp;L shown in ¢/bu. Payoff is at expiration only — no time value remaining.
+  Listed CBOT corn options are technically American-style; Black-76 prices the European equivalent
+  and the early-exercise premium is usually small but nonzero.
+</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function normCDF(x) { return 0.5 * (1 + erf(x / Math.sqrt(2))); }
+function erf(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x);
+  const t = 1 / (1 + p * ax);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return sign * y;
+}
+function normPDF(x) { return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI); }
+
+function black76(F, K, T, sigma, r) {
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(F / K) + 0.5 * sigma * sigma * T) / (sigma * sqrtT);
+  const d2 = d1 - sigma * sqrtT;
+  const df = Math.exp(-r * T);
+  const Nd1 = normCDF(d1), Nd2 = normCDF(d2);
+  const Nmd1 = normCDF(-d1), Nmd2 = normCDF(-d2);
+  const phi = normPDF(d1);
+
+  const call = df * (F * Nd1 - K * Nd2);
+  const put  = df * (K * Nmd2 - F * Nmd1);
+
+  const callDelta = df * Nd1;
+  const putDelta  = -df * Nmd1;
+  const gamma     = df * phi / (F * sigma * sqrtT);
+  const vega      = F * df * phi * sqrtT / 100;
+  const decay     = -F * df * phi * sigma / (2 * sqrtT);
+  const callTheta = (decay + r * call) / 365;
+  const putTheta  = (decay + r * put)  / 365;
+  const callRho   = -T * call / 100;
+  const putRho    = -T * put  / 100;
+
+  return { call, put, d1, d2, callDelta, putDelta, gamma, vega, callTheta, putTheta, callRho, putRho };
+}
+
+function impliedVol(price, F, K, T, r, type) {
+  const intrinsic = type === 'call'
+    ? Math.max(0, (F - K) * Math.exp(-r * T))
+    : Math.max(0, (K - F) * Math.exp(-r * T));
+  if (price < intrinsic - 1e-6) return { vol: NaN, iters: 0, error: 'Price below intrinsic' };
+
+  let lo = 1e-4, hi = 5.0;
+  const pLo = type === 'call' ? black76(F, K, T, lo, r).call : black76(F, K, T, lo, r).put;
+  const pHi = type === 'call' ? black76(F, K, T, hi, r).call : black76(F, K, T, hi, r).put;
+  if (price < pLo) return { vol: NaN, iters: 0, error: 'Below model floor' };
+  if (price > pHi) return { vol: NaN, iters: 0, error: 'Above model ceiling' };
+
+  let mid = 0.25, iters = 0;
+  for (iters = 0; iters < 100; iters++) {
+    mid = 0.5 * (lo + hi);
+    const r2 = black76(F, K, T, mid, r);
+    const theo = type === 'call' ? r2.call : r2.put;
+    if (Math.abs(theo - price) < 1e-5) break;
+    if (theo < price) lo = mid; else hi = mid;
+  }
+  return { vol: mid, iters: iters + 1, error: null };
+}
+
+function getF() { return parseFloat(document.getElementById('F').value); }
+function getK() { return parseFloat(document.getElementById('K').value); }
+function getT() { return parseFloat(document.getElementById('D').value) / 365; }
+function getV() { return parseFloat(document.getElementById('V').value) / 100; }
+function getR() { return parseFloat(document.getElementById('R').value) / 100; }
+
+function updatePricing() {
+  const F = getF(), K = getK(), T = getT(), sigma = getV(), r = getR();
+
+  document.getElementById('F-out').textContent = F.toFixed(0);
+  document.getElementById('K-out').textContent = K.toFixed(0);
+  document.getElementById('D-out').textContent = parseFloat(document.getElementById('D').value).toFixed(0);
+  document.getElementById('V-out').textContent = (sigma * 100).toFixed(1);
+  document.getElementById('R-out').textContent = (r * 100).toFixed(1);
+
+  const o = black76(F, K, T, sigma, r);
+
+  document.getElementById('call-cents').textContent = o.call.toFixed(2) + ' ¢/bu';
+  document.getElementById('put-cents').textContent  = o.put.toFixed(2)  + ' ¢/bu';
+  document.getElementById('call-dollars').textContent =
+    '$' + (o.call * 50).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' per 5,000 bu contract';
+  document.getElementById('put-dollars').textContent =
+    '$' + (o.put * 50).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' per 5,000 bu contract';
+
+  const pct = ((F - K) / K) * 100;
+  let label;
+  if (Math.abs(pct) < 0.5) label = 'ATM';
+  else if (pct > 0) label = 'Call ITM by ' + pct.toFixed(1) + '%';
+  else label = 'Put ITM by ' + (-pct).toFixed(1) + '%';
+  document.getElementById('moneyness').textContent = label;
+  document.getElementById('d12').textContent = o.d1.toFixed(3) + ' / ' + o.d2.toFixed(3);
+  document.getElementById('texp').textContent = T.toFixed(3) + ' yr';
+
+  document.getElementById('cd').textContent = o.callDelta.toFixed(4);
+  document.getElementById('pd').textContent = o.putDelta.toFixed(4);
+  document.getElementById('cg').textContent = o.gamma.toFixed(5);
+  document.getElementById('pg').textContent = o.gamma.toFixed(5);
+  document.getElementById('cv').textContent = o.vega.toFixed(3);
+  document.getElementById('pv').textContent = o.vega.toFixed(3);
+  document.getElementById('ct').textContent = o.callTheta.toFixed(4);
+  document.getElementById('pt').textContent = o.putTheta.toFixed(4);
+  document.getElementById('cr').textContent = o.callRho.toFixed(4);
+  document.getElementById('pr').textContent = o.putRho.toFixed(4);
+}
+
+let ivType = 'call';
+function updateIV() {
+  const F = getF(), T = getT(), r = getR();
+  const K = parseFloat(document.getElementById('iv-K').value);
+  const price = parseFloat(document.getElementById('iv-price').value);
+
+  if (!K || !price || price <= 0) {
+    document.getElementById('iv-out').textContent = '—';
+    document.getElementById('iv-theo').textContent = '—';
+    document.getElementById('iv-iter').textContent = '—';
+    return;
+  }
+
+  const result = impliedVol(price, F, K, T, r, ivType);
+  if (isNaN(result.vol)) {
+    document.getElementById('iv-out').textContent = result.error || 'No solution';
+    document.getElementById('iv-theo').textContent = '—';
+    document.getElementById('iv-iter').textContent = '—';
+  } else {
+    const r2 = black76(F, K, T, result.vol, r);
+    const theo = ivType === 'call' ? r2.call : r2.put;
+    document.getElementById('iv-out').textContent = (result.vol * 100).toFixed(2) + '%';
+    document.getElementById('iv-theo').textContent = theo.toFixed(2) + ' ¢/bu';
+    document.getElementById('iv-iter').textContent = result.iters;
+  }
+}
+
+document.getElementById('iv-call').addEventListener('click', () => {
+  ivType = 'call';
+  document.getElementById('iv-call').classList.add('active');
+  document.getElementById('iv-put').classList.remove('active');
+  updateIV();
+});
+document.getElementById('iv-put').addEventListener('click', () => {
+  ivType = 'put';
+  document.getElementById('iv-put').classList.add('active');
+  document.getElementById('iv-call').classList.remove('active');
+  updateIV();
+});
+
+let legs = [];
+let legId = 0;
+
+function addLeg(side = 'long', type = 'call', strike = 460, qty = 1, vol = 25) {
+  legs.push({ id: legId++, side, type, strike, qty, vol });
+  renderLegs();
+}
+
+function renderLegs() {
+  const c = document.getElementById('legs');
+  c.innerHTML = '';
+  legs.forEach((leg, idx) => {
+    const row = document.createElement('div');
+    row.className = 'leg-row';
+
+    const sideSel = document.createElement('select');
+    sideSel.innerHTML = '<option value="long">Long</option><option value="short">Short</option>';
+    sideSel.value = leg.side;
+    sideSel.addEventListener('change', e => { leg.side = e.target.value; updatePayoff(); });
+
+    const typeSel = document.createElement('select');
+    typeSel.innerHTML = '<option value="call">Call</option><option value="put">Put</option>';
+    typeSel.value = leg.type;
+    typeSel.addEventListener('change', e => { leg.type = e.target.value; updatePayoff(); });
+
+    const kInput = document.createElement('input');
+    kInput.type = 'number'; kInput.value = leg.strike; kInput.step = '1';
+    kInput.className = 'num-input';
+    kInput.addEventListener('input', e => { leg.strike = parseFloat(e.target.value); updatePayoff(); });
+
+    const qInput = document.createElement('input');
+    qInput.type = 'number'; qInput.value = leg.qty; qInput.step = '1'; qInput.min = '1';
+    qInput.className = 'num-input';
+    qInput.addEventListener('input', e => { leg.qty = parseInt(e.target.value) || 1; updatePayoff(); });
+
+    const vWrap = document.createElement('div');
+    vWrap.className = 'vol-wrap';
+    const vInput = document.createElement('input');
+    vInput.type = 'number'; vInput.value = leg.vol; vInput.step = '0.5'; vInput.min = '1';
+    vInput.className = 'num-input';
+    vInput.style.flex = '1';
+    vInput.addEventListener('input', e => { leg.vol = parseFloat(e.target.value); updatePayoff(); });
+    const vLabel = document.createElement('span');
+    vLabel.textContent = '% IV';
+    vWrap.appendChild(vInput); vWrap.appendChild(vLabel);
+
+    const rmBtn = document.createElement('button');
+    rmBtn.textContent = '×';
+    rmBtn.className = 'rm-btn';
+    rmBtn.addEventListener('click', () => { legs.splice(idx, 1); renderLegs(); });
+
+    row.appendChild(sideSel); row.appendChild(typeSel);
+    row.appendChild(kInput); row.appendChild(qInput);
+    row.appendChild(vWrap); row.appendChild(rmBtn);
+    c.appendChild(row);
+  });
+  updatePayoff();
+}
+
+document.getElementById('add-leg').addEventListener('click', () => addLeg());
+document.getElementById('clear-legs').addEventListener('click', () => { legs = []; renderLegs(); });
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const F = getF();
+    const atm = Math.round(F / 10) * 10;
+    legs = [];
+    const p = btn.dataset.preset;
+    if (p === 'long-call') addLeg('long', 'call', atm, 1, 25);
+    else if (p === 'long-put') addLeg('long', 'put', atm, 1, 25);
+    else if (p === 'bull-call') { addLeg('long', 'call', atm, 1, 25); addLeg('short', 'call', atm + 30, 1, 25); }
+    else if (p === 'bear-put') { addLeg('long', 'put', atm, 1, 25); addLeg('short', 'put', atm - 30, 1, 25); }
+    else if (p === 'straddle') { addLeg('long', 'call', atm, 1, 25); addLeg('long', 'put', atm, 1, 25); }
+    else if (p === 'strangle') { addLeg('long', 'call', atm + 20, 1, 25); addLeg('long', 'put', atm - 20, 1, 25); }
+    else if (p === 'iron-condor') {
+      addLeg('short', 'call', atm + 20, 1, 25); addLeg('long', 'call', atm + 50, 1, 25);
+      addLeg('short', 'put', atm - 20, 1, 25); addLeg('long', 'put', atm - 50, 1, 25);
+    }
+    else if (p === 'fence') { addLeg('long', 'put', atm - 20, 1, 25); addLeg('short', 'call', atm + 20, 1, 25); }
+    renderLegs();
+  });
+});
+
+let chart = null;
+function updatePayoff() {
+  const F = getF(), T = getT(), r = getR();
+
+  let netCost = 0;
+  legs.forEach(leg => {
+    const sigma = leg.vol / 100;
+    if (sigma <= 0 || !leg.strike) return;
+    const p = black76(F, leg.strike, T, sigma, r);
+    const prem = leg.type === 'call' ? p.call : p.put;
+    const sign = leg.side === 'long' ? 1 : -1;
+    netCost += sign * prem * leg.qty;
+  });
+
+  const lo = Math.max(50, F * 0.6);
+  const hi = F * 1.4;
+  const N = 200;
+  const xs = [], ys = [];
+  for (let i = 0; i <= N; i++) {
+    const Fexp = lo + (hi - lo) * i / N;
+    let pl = -netCost;
+    legs.forEach(leg => {
+      const intrinsic = leg.type === 'call'
+        ? Math.max(0, Fexp - leg.strike)
+        : Math.max(0, leg.strike - Fexp);
+      const sign = leg.side === 'long' ? 1 : -1;
+      pl += sign * intrinsic * leg.qty;
+    });
+    xs.push(Fexp); ys.push(pl);
+  }
+
+  let maxP = -Infinity, minP = Infinity;
+  ys.forEach(y => { if (y > maxP) maxP = y; if (y < minP) minP = y; });
+
+  const breakevens = [];
+  for (let i = 1; i < ys.length; i++) {
+    if ((ys[i - 1] < 0 && ys[i] >= 0) || (ys[i - 1] > 0 && ys[i] <= 0) || ys[i] === 0) {
+      const x0 = xs[i - 1], x1 = xs[i], y0 = ys[i - 1], y1 = ys[i];
+      const be = x0 - y0 * (x1 - x0) / (y1 - y0);
+      breakevens.push(be);
+    }
+  }
+
+  document.getElementById('net-cost').textContent =
+    (netCost >= 0 ? netCost.toFixed(2) : '+' + (-netCost).toFixed(2)) + ' ¢/bu';
+  document.getElementById('max-profit').textContent =
+    legs.length ? (maxP === Infinity ? '∞' : maxP.toFixed(2) + ' ¢/bu') : '—';
+  document.getElementById('max-loss').textContent =
+    legs.length ? (minP === -Infinity ? '∞' : minP.toFixed(2) + ' ¢/bu') : '—';
+  document.getElementById('breakevens').textContent =
+    breakevens.length ? breakevens.map(b => b.toFixed(1)).join(', ') : '—';
+
+  const profitColor = '#1D9E75';
+  const lossColor = '#E24B4A';
+  const axisColor = 'rgba(0,0,0,0.5)';
+  const gridColor = 'rgba(0,0,0,0.06)';
+
+  const profitData = ys.map(y => y > 0 ? y : null);
+  const lossData = ys.map(y => y <= 0 ? y : null);
+
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('payoffChart');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: xs.map(x => x.toFixed(0)),
+      datasets: [
+        {
+          label: 'Profit',
+          data: profitData,
+          borderColor: profitColor,
+          backgroundColor: 'rgba(29,158,117,0.18)',
+          fill: 'origin', pointRadius: 0, borderWidth: 2, tension: 0, spanGaps: false
+        },
+        {
+          label: 'Loss',
+          data: lossData,
+          borderColor: lossColor,
+          backgroundColor: 'rgba(226,75,74,0.18)',
+          fill: 'origin', pointRadius: 0, borderWidth: 2, tension: 0, spanGaps: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => 'F at expiry: ' + items[0].label + ' ¢/bu',
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (v === null) return null;
+              return 'P&L: ' + (v >= 0 ? '+' : '') + v.toFixed(2) + ' ¢/bu  ($' + (v * 50).toFixed(0) + '/contract)';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Futures price at expiration (¢/bu)', color: axisColor, font: { size: 11 } },
+          ticks: { color: axisColor, maxTicksLimit: 8, font: { size: 11 } },
+          grid: { color: gridColor }
+        },
+        y: {
+          title: { display: true, text: 'P&L (¢/bu)', color: axisColor, font: { size: 11 } },
+          ticks: { color: axisColor, font: { size: 11 }, callback: v => (v >= 0 ? '+' : '') + v },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
+}
+
+['F', 'K', 'D', 'V', 'R'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    updatePricing();
+    updateIV();
+    updatePayoff();
+  });
+});
+['iv-K', 'iv-price'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateIV);
+});
+
+updatePricing();
+addLeg('long', 'call', 460, 1, 25);
+addLeg('short', 'call', 490, 1, 25);
+updateIV();
+</script>
+
+</body>
+</html>
