@@ -10,3 +10,7 @@ VIEW RAW CODE
 RIGHT CLICK BACKGROUND AND SAVE AS AN HTML
 
 OPEN THE HTML
+
+
+pip install streamlit plotly
+streamlit run black76_corn_app.py
