@@ -13,4 +13,5 @@ OPEN THE HTML
 
 
 pip install streamlit plotly
+
 streamlit run black76_corn.py
